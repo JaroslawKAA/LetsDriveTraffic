@@ -1,108 +1,83 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
+using UnityEngine.AI;
 
 public class CarController : MonoBehaviour
 {
-    public bool reachedDestination;
-    public bool isDestinationInFront;
+    #region Fields
 
-    private float reachedTargetDistance = 2f;
-    private Waypoint _target;
-    private CarMotor _motor;
+    private float speedMax = 20f;
+
+    private NavMeshAgent _navMeshAgent;
     private WaypointNavigator _navigator;
     private CarCollisionDetector _collisionDetector;
 
-    private void Awake()
+    #endregion Fields
+
+    #region Events
+
+    public Action OnNavMeshAgentEnabled;
+
+    #endregion
+
+    public void OnNavMeshAgentEnabled_Invoke()
     {
-        _motor = GetComponent<CarMotor>();
-        _navigator = GetComponent<WaypointNavigator>();
-        _collisionDetector = GetComponent<CarCollisionDetector>();
+        OnNavMeshAgentEnabled?.Invoke();
     }
 
-    // Update is called once per frame
-    void Update()
+    #region Private Methods
+
+    private void Awake()
     {
-        _motor.ResetInputs();
+        _navMeshAgent = GetComponent<NavMeshAgent>();
+        _navigator = GetComponent<WaypointNavigator>();
+        _collisionDetector = GetComponent<CarCollisionDetector>();
 
-        float distanceToTarget = Vector3.Distance(transform.position, _target.transform.position);
+        OnNavMeshAgentEnabled += SetNextDestination;
+        _navigator.OnReachedCurrentWaypoint += SetNextDestination;
+    }
 
-        if (distanceToTarget > reachedTargetDistance)
+    private void Update()
+    {
+        _navMeshAgent.destination = _navigator.CurrentWaypoint.transform.position;
+        
+        if (_collisionDetector.IsCarInFront)
         {
             if (_collisionDetector.IsCloseObstacle)
             {
-                _motor.Brake();
-            }else if (_collisionDetector.IsFarObstacle)
-            {
-                _motor.SlowDown();
-            }
-            else if (IsTargetInFront())
-            {
-                _motor.MoveForward();
+                _navMeshAgent.speed = 0f;
             }
             else
             {
-                _motor.Brake();
+                _navMeshAgent.speed = speedMax / 2f;
             }
-            
-            var destinationVector = (_target.transform.position - transform.position).normalized;
-            float angleToDir = Vector3.SignedAngle(transform.forward, destinationVector, Vector3.up);
-            if (angleToDir > 0)
-                _motor.TurnRight();
-            else
-                _motor.TurnLeft();
         }
         else
         {
-            //Reached target
-            reachedDestination = true;
-            _motor.Brake();
-            _motor.StopTurning();
+            _navMeshAgent.speed = speedMax;
         }
-
-
-        if (Vector3.Distance(transform.position, _target.transform.position) < 1f)
-        {
-            reachedDestination = true;
-        }
-
-        // _motor.SetInputs(forwardAmount, turnAmount);
+        
     }
 
-    public void SetDestination(Waypoint destination)
+    private void SetNextDestination()
     {
-        if (destination != null)
-        {
-            _target = destination;
-            reachedDestination = false;
-        }
-        else
-        {
-            CarSpawner.S.RemoveCar(gameObject);
-        }
+        _navMeshAgent.destination = _navigator.CurrentWaypoint.transform.position;
     }
 
-    private bool IsTargetInFront()
+    private void SetNextDestination(Waypoint waypoint)
     {
-        var destinationVector = _target.transform.position - transform.position;
-        float angle = Vector2.Angle(
-            new Vector2(transform.forward.x, transform.forward.z),
-            new Vector2(destinationVector.x, destinationVector.z));
-
-        if (Mathf.Abs(angle) < 60)
-        {
-            isDestinationInFront = true;
-            return true;
-        }
-
-        isDestinationInFront = false;
-        return false;
+        if (waypoint == null)
+            return;
+        
+        _navMeshAgent.destination = waypoint.transform.position;
     }
 
     private void OnDrawGizmos()
     {
-        if (_target == null)
-            return;
-
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine(transform.position + new Vector3(0, 0.2f, 0), _target.transform.position);
+        Vector3 lineOffset = new Vector3(0, .3f, 0);
+        
+        Debug.DrawLine(transform.position + lineOffset, _navMeshAgent.destination, Color.cyan);
     }
+
+    #endregion
 }

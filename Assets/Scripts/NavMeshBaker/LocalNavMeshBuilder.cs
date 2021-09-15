@@ -22,14 +22,10 @@ public class LocalNavMeshBuilder : MonoBehaviour
     
     private void Start()
     {
-        GameManager.S.AbstractMap.MapVisualizer.OnMapVisualizerStateChanged += (x) =>
+        GameManager.S.OnLevelGenerated += () =>
         {
-            if (x == ModuleState.Finished)
-            {
                 UpdateNavMesh(false);
-            }
         };
-    
     }
 
     void OnEnable()
@@ -58,6 +54,7 @@ public class LocalNavMeshBuilder : MonoBehaviour
             m_Operation = NavMeshBuilder.UpdateNavMeshDataAsync(m_NavMesh, defaultBuildSettings, m_Sources, bounds);
         else
             NavMeshBuilder.UpdateNavMeshData(m_NavMesh, defaultBuildSettings, m_Sources, bounds);
+        
     }
 
     static Vector3 Quantize(Vector3 v, Vector3 quant)

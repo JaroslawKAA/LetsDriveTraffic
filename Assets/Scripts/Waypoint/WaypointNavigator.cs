@@ -1,45 +1,77 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class WaypointNavigator : MonoBehaviour
 {
-    public Waypoint currentWaypoint;
+    #region Properties
 
-    private CarController _controller;
-
-    private void Awake()
+    public Waypoint CurrentWaypoint
     {
-        _controller = GetComponent<CarController>();
+        get => _currentWaypoint;
+        private set
+        {
+            if (value == null)
+            {
+                CarSpawner.S.RemoveCar(gameObject);
+            }
+            _currentWaypoint = value;
+        }
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        _controller.SetDestination(currentWaypoint);
-    }
+    public bool ReachedTarget => ReachedCurrentWaypoint();
+
+    #endregion
+
+    #region Fields
+
+    private float _reachedTargetDistance = 4f;
+    private Waypoint _currentWaypoint;
+
+    #endregion
+
+    #region Events
+
+    public Action<Waypoint> OnReachedCurrentWaypoint;
+
+    #endregion
 
     // Update is called once per frame
     void Update()
     {
-        if (_controller.reachedDestination)
+        if (ReachedCurrentWaypoint())
         {
             bool shouldBranch = false;
-            if (currentWaypoint.branches != null && currentWaypoint.branches.Count > 0)
+            if (CurrentWaypoint.branches != null && CurrentWaypoint.branches.Count > 0)
             {
-                shouldBranch = Random.Range(0f, 1f) <= currentWaypoint.branchRatio ? true : false;
+                shouldBranch = Random.Range(0f, 1f) <= CurrentWaypoint.branchRatio ? true : false;
             }
 
             if (shouldBranch)
             {
-                currentWaypoint = currentWaypoint.branches[Random.Range(0, currentWaypoint.branches.Count - 1)];
-                
+                CurrentWaypoint = CurrentWaypoint.branches[Random.Range(0, CurrentWaypoint.branches.Count - 1)];
             }
             else
             {
-                currentWaypoint = currentWaypoint.nextWaypoint;
+                CurrentWaypoint = CurrentWaypoint.nextWaypoint;
             }
-            
-            _controller.SetDestination(currentWaypoint);
+
+            OnReachedCurrentWaypoint?.Invoke(CurrentWaypoint);
         }
+    }
+
+    public void SetCurrentWaypoint(Waypoint waypoint)
+    {
+        this.CurrentWaypoint = waypoint;
+    }
+
+    private bool ReachedCurrentWaypoint()
+    {
+        if (CurrentWaypoint == null)
+            return false;
+
+        float distanceToTarget = Vector3.Distance(transform.position, CurrentWaypoint.transform.position);
+
+        return !(distanceToTarget > _reachedTargetDistance);
     }
 }

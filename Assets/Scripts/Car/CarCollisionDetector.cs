@@ -48,7 +48,7 @@ public class CarCollisionDetector : MonoBehaviour
         _collider = GetComponent<Collider>();
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         IsCarInFront = false;
         IsBuildingInFront = false;

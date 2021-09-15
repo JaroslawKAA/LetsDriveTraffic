@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.AI;
 using Random = UnityEngine.Random;
 
 public class CarSpawner : MonoBehaviour
@@ -16,6 +17,7 @@ public class CarSpawner : MonoBehaviour
     private List<GameObject> _cars;
     private List<Transform> _firstsWaypoints;
     private float spawnTimer = 1f;
+    private bool _isInitSpawnDone;
 
     // Start is called before the first frame update
     void Start()
@@ -25,7 +27,10 @@ public class CarSpawner : MonoBehaviour
         
         S = this;
         _cars = new List<GameObject>();
-        StartCoroutine(InitSpawn());
+        GameManager.S.OnLevelGenerated += () =>
+        {
+            StartCoroutine(InitSpawn());
+        };
         _firstsWaypoints = transform.GetAllChildren()
             .Where(c => c.GetComponent<Waypoint>().previousWaypoint == null)
             .ToList();
@@ -39,6 +44,9 @@ public class CarSpawner : MonoBehaviour
 
     private void Update()
     {
+        if(!_isInitSpawnDone) return;
+        
+        // Spawn car when the count in scene is lower than carToSpawn
         if (_cars.Count < carToSpawn)
         {
             if (spawnTimer > 0)
@@ -57,33 +65,45 @@ public class CarSpawner : MonoBehaviour
         }
     }
 
+    public void RemoveCar(GameObject obj)
+    {
+        _cars.Remove(obj);
+        Destroy(obj);
+    }
+
     private void Spawn(Transform waypointToSpawn)
     {
         GameObject obj = Instantiate(carPrefab);
         _cars.Add(obj);
-        Transform child = waypointToSpawn;
-        obj.GetComponent<WaypointNavigator>().currentWaypoint = child.GetComponent<Waypoint>();
-        obj.transform.position = child.position;
+        obj.GetComponent<WaypointNavigator>().SetCurrentWaypoint(waypointToSpawn.GetComponent<Waypoint>());
+        obj.transform.position = waypointToSpawn.position;
+        
         // Set car rotation to waypoint rotation 
-        if (child.GetComponent<Waypoint>().nextWaypoint != null)
+        if (waypointToSpawn.GetComponent<Waypoint>().nextWaypoint != null)
         {
-            var lookPosition = child.GetComponent<Waypoint>().nextWaypoint.transform.position - child.position;
+            var lookPosition = waypointToSpawn.GetComponent<Waypoint>().nextWaypoint.transform.position - waypointToSpawn.position;
             lookPosition.y = 0;
             var lookRotation = Quaternion.LookRotation(lookPosition);
             obj.transform.rotation = lookRotation;
         }
-        else if (child.GetComponent<Waypoint>().previousWaypoint != null)
+        else if (waypointToSpawn.GetComponent<Waypoint>().previousWaypoint != null)
         {
-            var lookPosition = child.position - child.GetComponent<Waypoint>().previousWaypoint.transform.position;
+            var lookPosition = waypointToSpawn.position - waypointToSpawn.GetComponent<Waypoint>().previousWaypoint.transform.position;
             lookPosition.y = 0;
             var lookRotation = Quaternion.LookRotation(lookPosition);
             obj.transform.rotation = lookRotation;
         }
+
+        StartCoroutine(EnableNavMeshAgent(obj));
     }
 
     private IEnumerator InitSpawn()
     {
-        List<Transform> availablePlacesToSpawn = transform.GetAllChildren().ToList();
+        yield return new WaitForSeconds(1);
+        
+        List<Transform> availablePlacesToSpawn = transform.GetAllChildren()
+            .Where(t => t.GetComponent<Waypoint>().nextWaypoint != null)
+            .ToList();
         availablePlacesToSpawn = availablePlacesToSpawn.Shuffle().ToList();
 
         int count = 0;
@@ -99,11 +119,20 @@ public class CarSpawner : MonoBehaviour
 
             count++;
         }
+
+        _isInitSpawnDone = true;
     }
 
-    public void RemoveCar(GameObject obj)
+    private IEnumerator EnableNavMeshAgent(GameObject car)
     {
-        _cars.Remove(obj);
-        Destroy(obj);
+        if (car == null)
+        {
+            Debug.Log("");
+        }
+        
+        yield return new WaitForSeconds(.25f);
+        
+        car.GetComponent<NavMeshAgent>().enabled = true;
+        car.GetComponent<CarController>().OnNavMeshAgentEnabled_Invoke();
     }
 }
