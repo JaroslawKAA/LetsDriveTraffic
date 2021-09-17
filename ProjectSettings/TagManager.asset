@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Car
   - Building
+  - MouseSnapper
   layers:
   - Default
   - TransparentFX
