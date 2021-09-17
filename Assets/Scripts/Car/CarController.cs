@@ -1,83 +1,107 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class CarController : MonoBehaviour
+namespace Car
 {
-    #region Fields
-
-    private float speedMax = 20f;
-
-    private NavMeshAgent _navMeshAgent;
-    private WaypointNavigator _navigator;
-    private CarCollisionDetector _collisionDetector;
-
-    #endregion Fields
-
-    #region Events
-
-    public Action OnNavMeshAgentEnabled;
-
-    #endregion
-
-    public void OnNavMeshAgentEnabled_Invoke()
+    public class CarController : MonoBehaviour
     {
-        OnNavMeshAgentEnabled?.Invoke();
-    }
+        #region Fields
 
-    #region Private Methods
+        [SerializeField] private float speedMax = 20f;
+        [SerializeField] private float targetSpeed;
+    
+        private NavMeshAgent _navMeshAgent;
+        private WaypointNavigator _navigator;
+        private CarCollisionDetector _collisionDetector;
 
-    private void Awake()
-    {
-        _navMeshAgent = GetComponent<NavMeshAgent>();
-        _navigator = GetComponent<WaypointNavigator>();
-        _collisionDetector = GetComponent<CarCollisionDetector>();
+        #endregion Fields
 
-        OnNavMeshAgentEnabled += SetNextDestination;
-        _navigator.OnReachedCurrentWaypoint += SetNextDestination;
-    }
+        #region Events
 
-    private void Update()
-    {
-        _navMeshAgent.destination = _navigator.CurrentWaypoint.transform.position;
-        
-        if (_collisionDetector.IsCarInFront)
+        public Action OnNavMeshAgentEnabled;
+
+        #endregion
+
+        // TODO move it to nav mesh generator
+        public void OnNavMeshAgentEnabled_Invoke()
         {
-            if (_collisionDetector.IsCloseObstacle)
+            OnNavMeshAgentEnabled?.Invoke();
+        }
+
+        public void Stop()
+        {
+            targetSpeed = 0f;
+        }
+
+        public void LimitSpeed(int limit)
+        {
+            targetSpeed = limit;
+            StartCoroutine(ResetSpeed(10));
+        }
+
+        #region Private Methods
+
+        private void Awake()
+        {
+            targetSpeed = speedMax;
+        
+            _navMeshAgent = GetComponent<NavMeshAgent>();
+            _navigator = GetComponent<WaypointNavigator>();
+            _collisionDetector = GetComponent<CarCollisionDetector>();
+
+            OnNavMeshAgentEnabled += SetNextDestination;
+            _navigator.OnReachedCurrentWaypoint += SetNextDestination;
+        }
+
+        private void Update()
+        {
+            _navMeshAgent.destination = _navigator.CurrentWaypoint.transform.position;
+            
+            if (_collisionDetector.IsCarInFront && _collisionDetector.IsCloseObstacle)
             {
                 _navMeshAgent.speed = 0f;
             }
+            else if ((_collisionDetector.IsCarInFront
+                      || _collisionDetector.IsBuildingInFront)
+                     && _collisionDetector.IsFarObstacle)
+            {
+                _navMeshAgent.speed = targetSpeed / 2f;
+            }
             else
             {
-                _navMeshAgent.speed = speedMax / 2f;
+                _navMeshAgent.speed = targetSpeed;
             }
         }
-        else
+
+        private void SetNextDestination()
         {
-            _navMeshAgent.speed = speedMax;
+            _navMeshAgent.destination = _navigator.CurrentWaypoint.transform.position;
         }
-        
-    }
 
-    private void SetNextDestination()
-    {
-        _navMeshAgent.destination = _navigator.CurrentWaypoint.transform.position;
-    }
+        private void SetNextDestination(Waypoint waypoint)
+        {
+            if (waypoint == null)
+                return;
 
-    private void SetNextDestination(Waypoint waypoint)
-    {
-        if (waypoint == null)
-            return;
-        
-        _navMeshAgent.destination = waypoint.transform.position;
-    }
+            _navMeshAgent.destination = waypoint.transform.position;
+        }
 
-    private void OnDrawGizmos()
-    {
-        Vector3 lineOffset = new Vector3(0, .3f, 0);
-        
-        Debug.DrawLine(transform.position + lineOffset, _navMeshAgent.destination, Color.cyan);
-    }
+        private IEnumerator ResetSpeed(float afterSeconds)
+        {
+            yield return new WaitForSeconds(afterSeconds);
 
-    #endregion
+            targetSpeed = speedMax;
+        }
+
+        private void OnDrawGizmos()
+        {
+            Vector3 lineOffset = new Vector3(0, .3f, 0);
+
+            Debug.DrawLine(transform.position + lineOffset, _navMeshAgent.destination, Color.cyan);
+        }
+
+        #endregion
+    }
 }

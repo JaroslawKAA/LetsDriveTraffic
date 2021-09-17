@@ -1,8 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class MouseSnaper : MonoBehaviour
+public class MouseSnapper : MonoBehaviour
 {
     public Waypoint start;
     public Waypoint end;

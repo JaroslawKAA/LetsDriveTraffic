@@ -49,7 +49,7 @@ public class MouseDetectionStructure : MonoBehaviour
             snappersParent.transform);
         snapper.transform.localScale =
             new Vector3(4, 4, Vector3.Distance(start.transform.position, end.transform.position));
-        MouseSnaper mouseSnapper = snapper.GetComponent<MouseSnaper>();
+        MouseSnapper mouseSnapper = snapper.GetComponent<MouseSnapper>();
         mouseSnapper.start = start;
         mouseSnapper.end = end;
     }

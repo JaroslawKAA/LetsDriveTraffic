@@ -1,23 +1,37 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class MouseController : MonoBehaviour
 {
-    public RectTransform cursor;
+    /// <summary>
+    /// Singleton
+    /// </summary>
+    public static MouseController S;
 
+    public LayerMask mouseHitMask;
+
+    [SerializeField] private Cursor cursor;
+
+    public Cursor Cursor
+    {
+        get => cursor;
+        private set => cursor = value;
+    }
+
+    private GameObject selectedItem;
+
+    /// <summary>
+    /// Canvas with cursor.
+    /// </summary>
     private RectTransform _canvas;
 
     private void Awake()
     {
-        _canvas = cursor.transform.parent.GetComponent<RectTransform>();
-    }
+        if (S != null)
+            throw new Exception("Try to create second singleton object.");
+        S = this;
 
-    // Start is called before the first frame update
-    void Start()
-    {
+        _canvas = cursor.transform.parent.GetComponent<RectTransform>();
     }
 
     // Update is called once per frame
@@ -26,21 +40,60 @@ public class MouseController : MonoBehaviour
         RaycastHit hit;
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         Debug.DrawRay(ray.origin, ray.direction * 500, Color.magenta);
-        if (Physics.Raycast(ray, out hit))
+        if (Physics.Raycast(ray, out hit, 5000, mouseHitMask))
         {
             if (hit.transform.CompareTag("MouseSnapper"))
             {
-                MouseSnaper mouseSnaper = hit.transform.GetComponent<MouseSnaper>();
-                Vector3 snappingPosition = mouseSnaper.GetSnappedPosition(hit.point);
+                MouseSnapper mouseSnapper = hit.transform.GetComponent<MouseSnapper>();
+                Vector3 snappingPosition = mouseSnapper.GetSnappedPosition(hit.point);
                 Vector2 mousePosition = Camera.main.WorldToScreenPoint(snappingPosition);
-                cursor.anchoredPosition = new Vector2(mousePosition.x * _canvas.sizeDelta.x / Screen.width,
+                cursor.GetComponent<RectTransform>().anchoredPosition = new Vector2(
+                    mousePosition.x * _canvas.sizeDelta.x / Screen.width,
                     mousePosition.y * _canvas.sizeDelta.y / Screen.height);
+
+                if (selectedItem != null)
+                {
+                    Cursor.ActivateCursor();
+                }
+
+                if (Input.GetMouseButtonDown(0) && selectedItem != null)
+                {
+                    Instantiate(selectedItem, snappingPosition, Quaternion.identity);
+                }
             }
             else
             {
-                cursor.anchoredPosition = new Vector2(Input.mousePosition.x * _canvas.sizeDelta.x / Screen.width,
+                cursor.GetComponent<RectTransform>().anchoredPosition = new Vector2(
+                    Input.mousePosition.x * _canvas.sizeDelta.x / Screen.width,
                     Input.mousePosition.y * _canvas.sizeDelta.y / Screen.height);
+
+                if (selectedItem == null)
+                {
+                    Cursor.ActivateCursor();
+                }
+                else
+                {
+                    Cursor.DeactivateCursor();
+                }
             }
         }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            ResetSelectedItem();
+            Cursor.ResetIcon();
+        }
+    }
+
+    public void SelectItem(GameObject prefab)
+    {
+        selectedItem = prefab;
+        Sprite signSprite = prefab.GetComponent<Sign>().SignSprite;
+        Cursor.SetItemIcon(signSprite);
+    }
+
+    private void ResetSelectedItem()
+    {
+        selectedItem = null;
     }
 }
