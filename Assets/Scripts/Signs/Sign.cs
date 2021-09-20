@@ -1,5 +1,4 @@
-﻿using System;
-using Car;
+﻿using Car;
 using UnityEngine;
 using UnityEngine.Assertions;
 
@@ -8,21 +7,50 @@ using UnityEngine.Assertions;
 /// </summary>
 public abstract class Sign : MonoBehaviour
 {
-    [SerializeField] private Sprite _signSprite;
 
+    #region Fields
+    
+    [SerializeField] private Sprite _signSprite;
+    [SerializeField] private Waypoint _previousWaypoint;
+    [SerializeField] private Waypoint _nextWaypoint;
+
+    #endregion
+
+    #region Properties
+
+    public Waypoint PreviousWaypoint
+    {
+        get => _previousWaypoint;
+        set => _previousWaypoint = value;
+    }
+
+    public Waypoint NextWaypoint
+    {
+        get => _nextWaypoint;
+        set => _nextWaypoint = value;
+    }
+    
     public Sprite SignSprite
     {
         get => _signSprite;
         private set => _signSprite = value;
     }
 
-    private void Awake()
+    #endregion
+
+    public void SetContext(MouseSnapper snapper)
     {
-        Texture2D mainTexture = GetComponentInChildren<Renderer>()
-            .material.mainTexture as Texture2D;
-        SignSprite = Sprite.Create(mainTexture,
-            new Rect(0, 0, mainTexture.width, mainTexture.height),
-            new Vector2());
+        PreviousWaypoint = snapper.start;
+        NextWaypoint = snapper.end;
+        float signArrowRotation = Quaternion.LookRotation(
+                PreviousWaypoint.transform.position - NextWaypoint.transform.position)
+            .eulerAngles.y;
+        GetComponentInChildren<SignArrow>().SetRotation(signArrowRotation + 180);
+    }
+    
+    public void Drag(Vector3 targetPosition)
+    {
+        transform.position = new Vector3(targetPosition.x, 0, targetPosition.z);
     }
 
     private void Start()
@@ -32,10 +60,19 @@ public abstract class Sign : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        Assert.IsNotNull(PreviousWaypoint);
+        Assert.IsNotNull(NextWaypoint);
+        
         if (other.transform.CompareTag("Car"))
         {
-            CarController car = other.GetComponent<CarController>();
-            SendMessageToCar(car);
+            WaypointNavigator carNavigator = other.GetComponent<WaypointNavigator>();
+            // Check if car is on road with sign
+            if (carNavigator.CurrentWaypoint == PreviousWaypoint 
+                || carNavigator.CurrentWaypoint == NextWaypoint)
+            {
+                CarController car = other.GetComponent<CarController>();
+                SendMessageToCar(car);
+            }
         }
     }
 

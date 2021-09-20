@@ -40,7 +40,21 @@ public class Cursor : MonoBehaviour
         _rectTransform.sizeDelta = new Vector2(ItemSize, ItemSize);
     }
 
-    public void ResetIcon()
+    public void Hide()
+    {
+        Color transparentColor = _image.color;
+        transparentColor.a = 0f;
+        _image.color = transparentColor;
+    }
+
+    public void Show()
+    {
+        Color noTransparentColor = _image.color;
+        noTransparentColor.a = 1f;
+        _image.color = noTransparentColor;
+    }
+    
+    public void Reset()
     {
         _image.sprite = _cursorIcon;
         _rectTransform.sizeDelta = new Vector2(Size, Size);

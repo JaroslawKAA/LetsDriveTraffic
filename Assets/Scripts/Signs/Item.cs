@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class Item : MonoBehaviour
@@ -12,6 +13,7 @@ public class Item : MonoBehaviour
 
     private void OnClick()
     {
+        GameEvents.S.OnPlacingSignStart_Invoke();
         MouseController.S.SelectItem(signPrefab);
     }
 }

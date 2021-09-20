@@ -1,28 +1,40 @@
 ﻿using System;
 using Mapbox.Unity.Map;
+using Scripts;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-public class GameManager : MonoBehaviour
+public enum InteractionMode
+{
+    Default,
+    PlacingSign,
+    DraggingSign
+}
+
+public class GameManager : Singleton<GameManager>
 {
     #region Fields
 
-    public static GameManager S;
-    
     public AbstractMap AbstractMap;
 
+    public InteractionMode Mode
+    {
+        get => _mode;
+        private set => _mode = value;
+    }
+
     private bool _levelGenerated;
+    [SerializeField] private InteractionMode _mode = InteractionMode.Default;
 
     #endregion
     
-    private void Awake()
+    protected override void OnAwake()
     {
-        S = this;
         Assert.IsNotNull(AbstractMap);
     }
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         AbstractMap.MapVisualizer.OnMapVisualizerStateChanged += s =>
         {
@@ -41,8 +53,13 @@ public class GameManager : MonoBehaviour
                 }
             }
         };
-    }
 
+        GameEvents.S.OnPlacingSignStart += () => Mode = InteractionMode.PlacingSign;
+        GameEvents.S.OnPlacingSignEnd += () => Mode = InteractionMode.Default;        
+        GameEvents.S.OnDraggingSignStart += () => Mode = InteractionMode.DraggingSign;
+        GameEvents.S.OnDraggingSignEnd += () => Mode = InteractionMode.Default;
+    }
+    
     #region Events
 
     public Action OnLevelGenerated;
