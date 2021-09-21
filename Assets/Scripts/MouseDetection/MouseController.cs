@@ -1,5 +1,6 @@
 ﻿using System;
 using Scripts;
+using Signs;
 using UI;
 using UnityEngine;
 
@@ -69,7 +70,7 @@ public class MouseController : Singleton<MouseController>
                 }
                 else
                 {
-                    selectedItem.GetComponent<Sign>().SetContext(_previousSnapper);
+                    selectedItem.GetComponent<SignBase>().SetContext(_previousSnapper);
                 }
 
                 DeselectedItem();
@@ -80,7 +81,7 @@ public class MouseController : Singleton<MouseController>
                 Cursor.Hide();
                 if (isCursorSnapped)
                 {
-                    selectedItem.GetComponent<Sign>().Drag(snappedPosition);
+                    selectedItem.GetComponent<SignBase>().Drag(snappedPosition);
                 }
             }
         }
@@ -90,7 +91,7 @@ public class MouseController : Singleton<MouseController>
             if (Input.GetMouseButtonDown(0)
                 && isHit)
             {
-                if (hit.transform.TryGetComponent(out Sign sign))
+                if (hit.transform.TryGetComponent(out SignBase sign))
                 {
                     GameEvents.S.OnDraggingSignStart_Invoke();
                     SelectItem(hit.transform.gameObject, false);
@@ -149,7 +150,7 @@ public class MouseController : Singleton<MouseController>
         selectedItem = prefab;
         if (setCursorSprite)
         {
-            Sprite signSprite = prefab.GetComponent<Sign>().SignSprite;
+            Sprite signSprite = prefab.GetComponent<SignBase>().SignSprite;
             Cursor.SetItemIcon(signSprite);
         }
     }
@@ -162,6 +163,6 @@ public class MouseController : Singleton<MouseController>
     private void InstantiateSelectedSign(MouseSnapper mouseSnapper, Vector3 position)
     {
         GameObject instance = Instantiate(selectedItem, position, Quaternion.identity);
-        instance.GetComponent<Sign>().SetContext(mouseSnapper);
+        instance.GetComponent<SignBase>().SetContext(mouseSnapper);
     }
 }

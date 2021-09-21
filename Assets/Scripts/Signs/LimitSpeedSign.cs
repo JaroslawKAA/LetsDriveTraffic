@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Signs
 {
-    public class LimitSpeedSign : Sign
+    public class LimitSpeedSign : SignBase
     {
         [SerializeField] private int speedLimit = 30; 
         protected override void SendMessageToCar(CarController car)

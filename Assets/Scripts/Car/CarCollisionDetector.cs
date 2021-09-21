@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using UnityEngine;
 
 public class CarCollisionDetector : MonoBehaviour
@@ -33,8 +34,10 @@ public class CarCollisionDetector : MonoBehaviour
 
     private Renderer[] _renderers;
     private Collider _collider;
-    [Header("Defined dynamically")]
-    [SerializeField] private bool _isFarObstacle;
+
+    [Header("Defined dynamically")] [SerializeField]
+    private bool _isFarObstacle;
+
     [SerializeField] private bool _isCloseObstacle;
     [SerializeField] private bool _isCarInFront;
     [SerializeField] private bool _isBuildingInFront;
@@ -54,7 +57,7 @@ public class CarCollisionDetector : MonoBehaviour
         IsBuildingInFront = false;
         IsFarObstacle = false;
         IsCloseObstacle = false;
-        
+
         Ray ray = new Ray();
         ray.origin = transform.position + new Vector3(0, .36f, 0);
         ray.direction = transform.forward;
@@ -74,7 +77,7 @@ public class CarCollisionDetector : MonoBehaviour
                     IsCloseObstacle = true;
                 }
             }
-            
+
             if (hit.transform.CompareTag("Car"))
             {
                 Debug.DrawRay(ray.origin, ray.direction * frontDetectionDistance, Color.white);
@@ -96,10 +99,12 @@ public class CarCollisionDetector : MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
-        if (!Crashed && (other.transform.CompareTag("Car") || other.transform.CompareTag("Building")))
+        if (!Crashed && (other.transform.CompareTag("Car")
+                         || other.transform.CompareTag("Building")))
         {
             Crashed = true;
             SetCrashedColor();
+            GameEvents.S.OnRoadAccident_Invoke();
         }
     }
 

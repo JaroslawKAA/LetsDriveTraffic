@@ -5,6 +5,7 @@ using System.Linq;
 using Car;
 using UnityEngine;
 using UnityEngine.AI;
+using Waypoints;
 using Random = UnityEngine.Random;
 
 public class CarSpawner : MonoBehaviour

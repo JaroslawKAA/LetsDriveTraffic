@@ -1,12 +1,12 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using Car;
-using UnityEngine;
+﻿using Car;
 
-public class StopSign : Sign
+namespace Signs
 {
-    protected override void SendMessageToCar(CarController car)
+    public class StopSign : SignBase
     {
-        car.Stop();
+        protected override void SendMessageToCar(CarController car)
+        {
+            car.Stop();
+        }
     }
 }

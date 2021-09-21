@@ -31,4 +31,11 @@ public static class Extensions
         {
             return list.OrderBy(x => Scripts.Utils.Random.Next());
         }
+
+        public static void SetAlpha(this SpriteRenderer renderer, float alphaChannel)
+        {
+            Color tempColor = renderer.color;
+            tempColor.a = alphaChannel;
+            renderer.color = tempColor;
+        }
 }

@@ -9,6 +9,7 @@ namespace System
         public event Action OnPlacingSignEnd;
         public event Action OnDraggingSignStart;
         public event Action OnDraggingSignEnd;
+        public event Action OnRoadAccident;
         
         public void OnGameModeChange_Invoke()
         {
@@ -30,6 +31,11 @@ namespace System
         public void OnDraggingSignEnd_Invoke()
         {
             OnDraggingSignEnd?.Invoke();
+        }
+
+        public void OnRoadAccident_Invoke()
+        {
+            OnRoadAccident?.Invoke();
         }
     }
 }

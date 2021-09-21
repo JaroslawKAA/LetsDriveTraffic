@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
+using Waypoints;
 
 namespace Car
 {
@@ -17,6 +18,8 @@ namespace Car
         private CarCollisionDetector _collisionDetector;
 
         #endregion Fields
+
+        public float SpeedMax => speedMax;
 
         #region Events
 
@@ -35,8 +38,14 @@ namespace Car
             targetSpeed = 0f;
         }
 
+
+        private bool _isLimitSpeedInvoked = false;
         public void LimitSpeed(int limit)
         {
+            if (_isLimitSpeedInvoked)
+                return;
+
+            _isLimitSpeedInvoked = true;
             targetSpeed = limit;
             StartCoroutine(ResetSpeed(10));
         }
@@ -88,11 +97,18 @@ namespace Car
             _navMeshAgent.destination = waypoint.transform.position;
         }
 
+        public void ResetSpeed()
+        {
+            targetSpeed = speedMax;
+            _isLimitSpeedInvoked = false;
+        }
+        
         private IEnumerator ResetSpeed(float afterSeconds)
         {
             yield return new WaitForSeconds(afterSeconds);
 
             targetSpeed = speedMax;
+            _isLimitSpeedInvoked = false;
         }
 
         private void OnDrawGizmos()
